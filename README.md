@@ -1,47 +1,38 @@
 # Sistema Avelon
 
-Aplicativo estático com autenticação Supabase, clientes PF/PJ, catálogo de produtos, orçamentos com histórico de preços, impressão/PDF, aprovação administrativa de usuários e configurações pessoais de empresa e propostas.
+Gestão da Avelon Têxtil com clientes, produtos, propostas, quadro de pedidos, contas a pagar/receber, baixas parciais, extratos CSV/OFX, conciliação, patrimônio e relatórios gerenciais. Hospedagem no GitHub Pages e banco no Supabase Free da Avelon. Nenhum serviço pago é necessário ou contratado.
 
-## Executar
+## Executar e validar
 
-Sirva `dist/` com um servidor HTTP. Não há dependências de compilação. `dist/config.js` contém somente a URL e a chave **publicável** do projeto; nenhuma chave privilegiada é necessária no navegador.
+Sirva `dist/` com um servidor HTTP. Não há dependências de compilação. `dist/config.js` contém somente URL e chave publicável. Nunca adicionar chave privilegiada ao navegador.
 
-## Banco
+`node --test --test-isolation=none tests/business.test.mjs` verifica cálculo de preços, leitura de extratos, datas, duplicatas, saldos e depreciação. O teste SQL em `tests/database-rollback.sql` valida regras usando registros temporários revertidos ao final. Executar somente no editor SQL administrativo do projeto configurado.
 
-As migrações em `supabase/` foram aplicadas na ordem numérica ao projeto `gghclidwfawpniuwtuyy`. Não reaplicar em um banco já configurado. O primeiro administrador é vinculado ao e-mail empresarial confirmado; `004_owner_protection.sql` protege esse acesso. Novos usuários recebem perfil de membro inativo e dependem de aprovação do administrador. As operações administrativas rodam em funções Postgres com validação do papel do chamador. Os registros de negócio usam RLS por usuário ativo.
+## Banco e acesso
 
-Orçamentos são gravados atomicamente pela função `create_quote`: o servidor valida a propriedade do cliente/produto, recalcula valores e armazena os instantâneos. Acréscimo: custo × (1+p/100). Margem: custo ÷ (1-p/100), com p menor que 100. A logo e os dados de empresa são preservados por orçamento. O catálogo de varejo/atacado é informativo nesta versão.
+Migrações `001` a `008` em ordem, incluindo `005b` depois de `005`. Não reaplicar no projeto já configurado. A equipe aprovada trabalha na base compartilhada da empresa, com autorização por módulo e operação. O proprietário é protegido. Novos membros começam inativos e sem liberações. Não há credenciais administrativas no aplicativo.
 
-## Limites desta versão
+As gravações financeiras usam funções autorizadas no servidor. Não há permissão direta de escrita nas tabelas financeiras. O histórico mantém baixas estornadas e títulos cancelados. Exclusões de clientes/produtos vinculados a propostas são bloqueadas pelo banco.
 
-- Dados separados por usuário; ainda não existe base compartilhada entre membros da equipe.
-- Logo e personalização descritiva são impressas; upload de arte por item ainda não está implementado.
-- Menu fixo e sem editor universal de telas. Permissões individuais por área e ação são aplicadas no banco.
-- Impressão usa o diálogo do navegador e sua opção Salvar como PDF.
-- Recuperação/cadastro dependem da entrega de e-mail do Supabase, dos limites gratuitos e dos endereços de redirecionamento configurados.
-- Módulos financeiros e importação da planilha ficam para etapas seguintes.
-- A ativação inicial ocorre por e-mail; o titular define sua própria senha. Senhas não são armazenadas no código.
+## Configurações
 
-## Origem visual
+Empresa: nome, contatos, cidade, logo e assinatura privada. Orçamentos: cálculo, entrada, validade, prazo, meios de pagamento e orientações. Produção: etapas, cores, ordem, técnicas e exigências de entrada/arte/quitação. Financeiro: contas, saldos iniciais, categorias, sócios, formas de pagamento e mapeamento CSV. Relatórios: regime, logo, assinatura, depreciação patrimonial e rodapé. Aparência: cor, densidade e ordem do menu. Cada área possui permissão própria de consulta e edição.
 
-`dist/logo.png` é a imagem original `xl/media/image5.png` da exportação XLSX da planilha FINANCEIRO - AVELON TÊXTIL. A fonte permaneceu somente leitura. Nenhum cadastro real da planilha foi importado.
+## Regras operacionais
 
-## Custos
+- Mover um pedido não registra pagamento. Entrada e saldo são títulos separados, gerados uma única vez por proposta.
+- Produção e personalização exigem entrada e arte quando essas regras estão habilitadas. Finalização exige quitação quando configurada.
+- Títulos não alteram o caixa até a baixa. Baixas parciais reduzem apenas o saldo pendente. Estornos preservam o histórico.
+- Extratos são importados para conferência. Vincular uma baixa existente não cria outro movimento de caixa. O identificador bancário, quando disponível, impede reimportação. CSV sem identificador usa data, valor, descrição e ocorrência; conferir períodos sobrepostos com movimentos idênticos.
+- Saldos incluem abertura mais baixas desde a data inicial da conta. Importações pendentes não alteram esse saldo.
+- A DRE gerencial exclui aportes, distribuições de capital, transferências e aquisições de ativos. Depreciação linear é apresentada no patrimônio e não incluída automaticamente na DRE.
+- Despesas recorrentes geram títulos por competência sem repetir meses existentes. Um bem cadastrado não cria automaticamente uma compra.
+- Propostas preservam preços, condições, identidade e assinatura da emissão. PDF usa o diálogo de impressão do navegador.
 
-Somente plano Free do Supabase e publicação via GitHub Pages gratuito. Nenhum plano pago foi contratado. Os limites gratuitos podem exigir ajustes futuros; não fazer upgrade automaticamente.
+## Origem e limites
 
-## Estrutura
+As duas imagens da marca foram fornecidas pelo titular via Google Drive (`logo-dark.png` e `logo-document.png`). A assinatura e as orientações foram recuperadas da planilha original, em consulta somente leitura. Assinatura e dados financeiros reais não são publicados no repositório. Nenhum cadastro financeiro real da planilha foi importado.
 
-- `dist/index.html`: entrada HTML.
-- `dist/js/auth/`: login, cadastro, recuperação e senha.
-- `dist/js/core/`: sessão, permissões e utilitários.
-- `dist/js/services/`: conexão e carregamento Supabase.
-- `dist/js/components/`: estrutura de navegação e interface.
-- `dist/js/modules/`: clientes/produtos, orçamento/impressão, usuários e configurações.
-- `dist/styles/`: estilos gerais, responsivos e de impressão.
-- `supabase/`: migrações SQL sequenciais.
-- `docs/`: análise somente leitura da planilha original.
+Referências de organização: Omie, Trello e KM Sistemas. Esta implementação cobre gestão operacional e financeira gerencial; não emite documentos fiscais, não executa pagamentos bancários e não substitui escrituração contábil. Arte é descrita por item; armazenamento de arquivos de arte e integração bancária automática não estão incluídos. Consultas acima de 20.000 registros são bloqueadas de forma explícita até a adoção de paginação por período.
 
-## Publicação
-
-A primeira execução da automação importa o pacote de origem e torna todos os arquivos visíveis em suas pastas no repositório. As próximas publicações usam diretamente `dist/`. O pacote não contém credenciais administrativas, dados de clientes ou histórico Git.
+GitHub Pages e Supabase estão nos planos gratuitos. Os limites dos provedores continuam aplicáveis. Nunca habilitar cobrança ou upgrade automaticamente.

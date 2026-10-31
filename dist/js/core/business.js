@@ -1,0 +1,24 @@
+export const STAGES=[['draft','Rascunho','#64748b'],['sent','Enviado','#3b82f6'],['awaiting_deposit','Aguardando entrada','#f59e0b'],['production','Em produção','#8b5cf6'],['cutting','Corte','#7c3aed'],['personalization','Personalização','#db2777'],['ready','Pedido pronto','#0891b2'],['awaiting_balance','Aguardando saldo','#d97706'],['completed','Finalizado','#16a34a'],['suspended','Suspenso','#64748b'],['cancelled','Cancelado','#dc2626']].map(([key,label,color])=>({key,label,color,enabled:true}));
+export const CLASSES={revenue:'Receita operacional',cost:'Custo de produção',expense:'Despesa operacional',tax:'Impostos / taxas',asset:'Aquisição de ativo',equity:'Movimentação de sócio / capital',transfer:'Transferência entre contas',other:'Outros / a classificar'};
+export const DEFAULTS={
+ budget:{deposit_percentage:50,production_days:10,payment_methods:'Pix / Crédito / Débito',validity_days:3,show_signature:true,show_notes:true,show_company:true,city:''},
+ production:{stages:STAGES,require_deposit:true,require_balance:true,require_art:true,techniques:['Silk','Sublimação','Bordado','DTF','Sem personalização']},
+ finance:{categories:['Vendas','Matéria-prima','Personalização','Frete','Aluguel','Energia','Água','Internet','Pró-labore','Aporte de sócio','Distribuição de lucros','Equipamentos','Tarifas bancárias','Impostos','Outros'],payment_methods:['Pix','Dinheiro','Crédito','Débito','Transferência','Boleto'],csv_separator:';',csv_date:0,csv_description:1,csv_amount:2,csv_id:-1,csv_header:true,reconcile_days:3,default_life_months:60,partners:['Vinicius Figueiredo','Maik Souto']},
+ reports:{basis:'cash',show_logo:true,show_signature:false,include_depreciation:true,footer:'Relatório gerencial para acompanhamento interno. Valores dependem dos lançamentos e conciliações registrados.'},
+ appearance:{density:'comfortable',menu:['home','workflow','quotes','finance','bank','reports','clients','products','assets','settings','users']}
+};
+export const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
+export const cents=n=>Math.round((Number(n)+Number.EPSILON)*100);
+export const round=n=>cents(n)/100;
+export function configSection(settings,key){return {...DEFAULTS[key],...(settings?.[key]||{})}}
+export function paidFor(entry,settlements){return round(settlements.filter(s=>s.entry_id===entry.id&&!s.reversed).reduce((n,s)=>n+Number(s.amount),0))}
+export function outstanding(entry,settlements){return entry.voided?0:Math.max(0,round(Number(entry.amount)-paidFor(entry,settlements)))}
+export function ledgerBalance(account,entries,settlements,until='9999-12-31') {return round(Number(account.opening_balance)+settlements.filter(s=>s.account_id===account.id&&!s.reversed&&s.paid_on>=account.opening_date&&s.paid_on<=until).reduce((n,s)=>{const e=entries.find(e=>e.id===s.entry_id);return n+(e?.kind==='income'?1:-1)*Number(s.amount)},0))}
+export function assetPosition(asset,asOf=today()){const acquired=new Date(asset.acquired_on+'T12:00:00'),end=new Date(asOf+'T12:00:00');const months=Math.max(0,Math.min(Number(asset.life_months),(end.getFullYear()-acquired.getFullYear())*12+end.getMonth()-acquired.getMonth()));const depreciation=round((Number(asset.cost)-Number(asset.residual))*months/Number(asset.life_months));return {months,depreciation,value:round(Number(asset.cost)-depreciation),monthly:round((Number(asset.cost)-Number(asset.residual))/Number(asset.life_months))}}
+export function financialSummary(entries,settlements,from,to,basis='cash'){
+ const rows=basis==='cash'?settlements.filter(s=>!s.reversed&&s.paid_on>=from&&s.paid_on<=to).map(s=>({...entries.find(e=>e.id===s.entry_id),value:Number(s.amount),date:s.paid_on})).filter(e=>e.id):entries.filter(e=>!e.voided&&e.competence>=from&&e.competence<=to).map(e=>({...e,value:Number(e.amount),date:e.competence}));
+ const totals={income:0,expense:0,revenue:0,cost:0,operating:0,tax:0,equity:0,asset:0,transfer:0,other:0};
+ for(const e of rows){totals[e.kind==='income'?'income':'expense']+=e.value;const sign=e.kind==='income'?1:-1;const k=e.class==='expense'?'operating':e.class;totals[k]=(totals[k]||0)+sign*e.value}
+ Object.keys(totals).forEach(k=>totals[k]=round(totals[k]));totals.cash_result=round(totals.income-totals.expense);totals.operating_result=round(totals.revenue+totals.cost+totals.operating+totals.tax);return {rows,totals};
+}
+export function quotePrice(cost,method,percentage){cost=Number(cost);percentage=Number(percentage);if(!Number.isFinite(cost)||cost<0||!Number.isFinite(percentage)||percentage<0||percentage>9999||(method==='margin'&&percentage>=100)||!['margin','markup'].includes(method))return NaN;return round(method==='margin'?cost/(1-percentage/100):cost*(1+percentage/100))}
