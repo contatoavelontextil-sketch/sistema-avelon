@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
     paths:
-      - avelon-source.zip
+      - avelon-v2.zip
       - 'dist/**'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
@@ -22,29 +22,39 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Importar estrutura inicial
-        if: hashFiles('dist/index.html') == ''
+      - name: Importar atualização autorizada
         run: |
           python3 - <<'PY'
-          import pathlib, zipfile
+          import hashlib, pathlib, zipfile
           root = pathlib.Path.cwd().resolve()
-          with zipfile.ZipFile('avelon-source.zip') as archive:
-              for member in archive.infolist():
-                  target = (root / member.filename).resolve()
-                  if not target.is_relative_to(root):
-                      raise RuntimeError('Caminho inválido no pacote')
-              archive.extractall(root)
+          package = root / 'avelon-v2.zip'
+          marker = root / '.source-import-sha'
+          if package.exists():
+              digest = hashlib.sha256(package.read_bytes()).hexdigest()
+              if not marker.exists() or marker.read_text().strip() != digest:
+                  with zipfile.ZipFile(package) as archive:
+                      for member in archive.infolist():
+                          target = (root / member.filename).resolve()
+                          allowed = member.filename.split('/')[0] in ('dist','supabase','docs','tests','README.md','.gitignore')
+                          if not target.is_relative_to(root) or not allowed:
+                              raise RuntimeError('Caminho inválido no pacote')
+                      archive.extractall(root)
+                  marker.write_text(digest + '\n')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add dist supabase docs README.md .gitignore
-          git commit -m 'feat: organizar módulos do Sistema Avelon'
-          git push
+          git add dist supabase docs tests README.md .gitignore .source-import-sha 2>/dev/null || git add dist
+          if ! git diff --cached --quiet; then
+            git commit -m 'feat: integrar produção, financeiro, conciliação e configurações'
+            git push
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Conferir JavaScript
         run: find dist -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Testar regras de negócio
+        run: if [ -f tests/business.test.mjs ]; then node --test tests/business.test.mjs; fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
