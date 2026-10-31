@@ -3,7 +3,7 @@ begin;
 set local role authenticated;
 select set_config('request.jwt.claim.sub',public.workspace_owner()::text,true);
 do $$
-declare a uuid;e uuid;s uuid;line uuid;q uuid;result jsonb;n integer;denied boolean;meta jsonb:='{"art_approved":true,"technique":"Silk"}';
+declare a uuid;b uuid;t uuid;g uuid;e uuid;s uuid;line uuid;q uuid;result jsonb;n integer;denied boolean;meta jsonb:='{"art_approved":true,"technique":"Silk"}';
 begin
  a:=public.save_account(null,'TESTE TRANSACIONAL',100,'2026-10-01',true);
  e:=public.save_fin_entry(null,'income','revenue','Vendas','TESTE TRANSACIONAL','',100,'2026-10-31','2026-10-01');
@@ -35,9 +35,24 @@ begin
   perform public.settle_entry(e,a,(select amount from public.fin_entries where id=e),'2026-10-31','TESTE',gen_random_uuid());
   perform public.update_order(q,'completed',null,meta,'TESTE',null);
  end if;
+ b:=public.save_account(null,'TESTE DESTINO',0,'2026-10-01',true);
+ t:=public.transfer_accounts(a,b,20,'2026-10-31','TESTE transferência',gen_random_uuid());
+ select e.transfer_group into g from public.fin_entries e join public.fin_settlements s on s.entry_id=e.id where s.id=t;
+ perform public.reverse_settlement(t,'TESTE estorno conjunto');
+ if (select count(*) from public.fin_settlements s join public.fin_entries e on e.id=s.entry_id where e.transfer_group=g and s.reversed)<>2 then raise exception 'Transferência estornada apenas de um lado';end if;
+ perform public.save_settings('{"budget":{"deposit_percentage":50,"production_days":10,"payment_methods":"Pix / Crédito / Débito","validity_days":3,"show_signature":true,"show_notes":true,"show_company":true,"city":""}}');
+ perform public.save_settings('{"production":{"stages":[{"key":"draft","label":"Rascunho","color":"#64748b","enabled":true},{"key":"sent","label":"Enviado","color":"#3b82f6","enabled":true},{"key":"awaiting_deposit","label":"Aguardando entrada","color":"#f59e0b","enabled":true},{"key":"production","label":"Em produção","color":"#8b5cf6","enabled":true},{"key":"cutting","label":"Corte","color":"#7c3aed","enabled":true},{"key":"personalization","label":"Personalização","color":"#db2777","enabled":true},{"key":"ready","label":"Pedido pronto","color":"#0891b2","enabled":true},{"key":"awaiting_balance","label":"Aguardando saldo","color":"#d97706","enabled":true},{"key":"completed","label":"Finalizado","color":"#16a34a","enabled":true},{"key":"suspended","label":"Suspenso","color":"#64748b","enabled":true},{"key":"cancelled","label":"Cancelado","color":"#dc2626","enabled":true}],"require_deposit":true,"require_balance":true,"require_art":true,"techniques":["Silk","Sublimação","Bordado","DTF","Sem personalização"]}}');
+ perform public.save_settings('{"finance":{"categories":["Vendas","Matéria-prima","Personalização","Frete","Aluguel","Energia","Água","Internet","Pró-labore","Aporte de sócio","Distribuição de lucros","Equipamentos","Tarifas bancárias","Impostos","Outros"],"payment_methods":["Pix","Dinheiro","Crédito","Débito","Transferência","Boleto"],"csv_separator":";","csv_date":0,"csv_description":1,"csv_amount":2,"csv_id":-1,"csv_header":true,"reconcile_days":3,"default_life_months":60,"partners":["Vinicius Figueiredo","Maik Souto"]}}');
+ perform public.save_settings('{"reports":{"basis":"cash","show_logo":true,"show_signature":false,"include_depreciation":true,"footer":"Relatório gerencial para acompanhamento interno. Valores dependem dos lançamentos e conciliações registrados."}}');
+ perform public.save_settings('{"appearance":{"density":"comfortable","menu":["home","workflow","quotes","finance","bank","reports","clients","products","assets","settings","users"]}}');
  perform public.save_settings('{"accent":"#b89b68"}');
  denied:=false;begin perform public.save_settings('{"accent":"invalid"}');exception when others then denied:=true;end;if not denied then raise exception 'Cor inválida permitida';end if;
 end $$;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000000',true);
+do $ declare denied boolean:=false;begin
+ if exists(select 1 from public.fin_entries) then raise exception 'Dados visíveis sem perfil ativo';end if;
+ begin perform public.save_settings('{"accent":"#000000"}');exception when others then denied:=true;end;if not denied then raise exception 'Configuração liberada sem perfil';end if;
+end $;
 reset role;
 select 'PASSOU: baixa parcial, limite do saldo, importação repetida, conciliação sem duplicidade, estorno, parcelas únicas, entrada/arte/saldo e configuração' as resultado;
 rollback;
