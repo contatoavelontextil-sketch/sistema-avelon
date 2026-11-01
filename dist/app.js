@@ -1,2 +1,2 @@
 // Application entry point; feature modules live in js/.
-import './js/main.js?v=20261101-v3b';
+import './js/main.js?v=20261101-v3c';

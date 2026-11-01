@@ -1,4 +1,4 @@
-import {configSection,today,productionStage} from '../core/business.js?v=20261101-v3b';
+import {configSection,today,productionStage} from '../core/business.js?v=20261101-v3c';
 export function install(ctx){
  const stageFor=q=>configSection(ctx.settings,'production').stages.find(s=>s.key===q.stage)||{key:q.stage,label:q.stage,color:'#64748b'};
  const moneyState=q=>{const f=ctx.orderFinance?.find(f=>f.quote_id===q.id);return {paid:Number(f?.paid||0),pending:Number(f?.pending??q.total)}};
