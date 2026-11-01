@@ -10,7 +10,7 @@ Sirva `dist/` com um servidor HTTP. Não há dependências de compilação. `dis
 
 ## Banco e acesso
 
-Migrações `001` a `009` em ordem, incluindo `005b` depois de `005`. Não reaplicar no projeto já configurado. A equipe aprovada trabalha na base compartilhada da empresa, com autorização por módulo e operação. O proprietário é protegido. Novos membros começam inativos e sem liberações. Não há credenciais administrativas no aplicativo.
+Migrações `001` a `013` em ordem, incluindo `005b` depois de `005`. Não reaplicar no projeto já configurado. A equipe aprovada trabalha na base compartilhada da empresa, com autorização por módulo e operação. O proprietário é protegido. Novos membros começam inativos e sem liberações. Não há credenciais administrativas no aplicativo.
 
 As gravações financeiras usam funções autorizadas no servidor. Não há permissão direta de escrita nas tabelas financeiras. O histórico mantém baixas estornadas e títulos cancelados. Exclusões de clientes/produtos vinculados a propostas são bloqueadas pelo banco.
 
@@ -36,3 +36,15 @@ As duas imagens da marca foram fornecidas pelo titular via Google Drive (`logo-d
 Referências de organização: Omie, Trello e KM Sistemas. Esta implementação cobre gestão operacional e financeira gerencial; não emite documentos fiscais, não executa pagamentos bancários e não substitui escrituração contábil. Arte é descrita por item; armazenamento de arquivos de arte e integração bancária automática não estão incluídos. Consultas acima de 20.000 registros são bloqueadas de forma explícita até a adoção de paginação por período.
 
 GitHub Pages e Supabase estão nos planos gratuitos. Os limites dos provedores continuam aplicáveis. Nunca habilitar cobrança ou upgrade automaticamente.
+
+## Atualização: orçamento, Mestre e recibos
+
+Novos produtos recebem código automático `AVL-000001`, `AVL-000002` etc. O código é atribuído no servidor e permanece protegido; a referência interna pode ser preenchida separadamente.
+
+O orçamento oferece cadastro rápido de cliente e produto em janelas, preserva os campos preenchidos e seleciona o registro criado. Cada item tem preço sugerido e preço editável. A margem bruta e o lucro estimado são recalculados pelo custo cadastrado. Essa análise é interna e não aparece no PDF do cliente. Propostas já emitidas podem originar uma revisão com novos preços, mantendo o documento anterior e suas parcelas no histórico.
+
+O proprietário aparece como **Mestre Criador**, com acesso completo. A matriz de permissões inclui alteração de preços/percentuais e consulta, emissão e impressão de recibos. Novos membros continuam dependendo de aprovação e das liberações escolhidas.
+
+Ao entrar em produção, a janela de adiantamento permite confirmar valores, registrar a diferença recebida no financeiro, ajustar a entrada acordada e preparar um recibo. O saldo é recalculado com o ajuste. O recibo confirma valores efetivamente registrados; repetir a mesma confirmação não duplica pagamento ou documento. Recibos de recebimentos estornados ficam identificados ao serem abertos ou impressos.
+
+O texto e a apresentação do recibo são configurados em **Configurações → Orçamentos → Recibos de adiantamento**, e a mensagem pode ser ajustada antes da emissão. O PDF inclui identificação da empresa/cliente, valor recebido, pedido, etapa, resumo dos itens, previsão, saldo e assinatura. A etapa **Costura** foi acrescentada ao quadro.

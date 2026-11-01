@@ -1,0 +1,58 @@
+-- Administrative test only. No fixture, account, permission or financial record is committed.
+begin;
+select set_config('avelon.qa.owner',public.workspace_owner()::text,true);
+do $$ declare member_id uuid:=gen_random_uuid();begin
+ insert into auth.users(id,email,raw_user_meta_data) values(member_id,'avelon-permission-test@example.invalid','{}');
+ perform set_config('avelon.qa.member',member_id::text,true);
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub',current_setting('avelon.qa.owner'),true);
+do $$
+declare c uuid;p uuid;p2 uuid;q uuid;q2 uuid;a uuid;r uuid;again uuid;request uuid:=gen_random_uuid();s uuid;old_code text;problem text;denied boolean;member_id uuid:=current_setting('avelon.qa.member')::uuid;m text;pct numeric;default_price numeric;payload jsonb;
+begin
+ if not public.can('future_module','future_action') then raise exception 'O Mestre não tem acesso geral';end if;
+ insert into public.clients(kind,name) values('PF','TESTE TRANSACIONAL CLIENTE') returning id into c;
+ insert into public.products(name,sku,cost,retail,wholesale) values('TESTE PRODUTO AUTOMÁTICO','REFERÊNCIA MANUAL',10,20,15) returning id,sku into p,old_code;
+ insert into public.products(name,cost,retail,wholesale) values('TESTE PRODUTO AUTOMÁTICO 2',5,10,8) returning id into p2;
+ if old_code !~ '^AVL-[0-9]{6,}$' or old_code=(select sku from public.products where id=p2) then raise exception 'Código automático repetido ou inválido';end if;
+ if (select reference from public.products where id=p)<>'REFERÊNCIA MANUAL' then raise exception 'Referência manual não preservada';end if;
+ update public.products set sku='TENTATIVA DE ALTERAÇÃO' where id=p;if (select sku from public.products where id=p)<>old_code then raise exception 'Código automático foi alterado';end if;
+ q:=public.create_quote_v3(c,'markup',50,current_date,'TESTE TRANSACIONAL PREÇO',jsonb_build_array(jsonb_build_object('product_id',p,'quantity',2,'custom_unit_price',20,'details','Tamanhos e nomes de teste')),'{"entry_percentage":50,"technique":"Silk"}');
+ if (select total from public.quotes where id=q)<>40 or not(select price_overridden and unit_price=20 and suggested_price=15 and cost_snapshot=10 from public.quote_items where quote_id=q) then raise exception 'Preço manual ou sugestão não preservados';end if;
+ a:=public.save_account(null,'TESTE TRANSACIONAL RECIBO',0,current_date,true);
+ denied:=false;begin perform public.start_order_with_receipt(q,'production',current_date,'{"art_approved":true,"technique":"Silk"}','TESTE',null,10,true,false,a,current_date,'Pix','TESTE',gen_random_uuid());exception when others then problem:=SQLERRM;denied:=SQLERRM like 'Registre a entrada%';end;
+ if not denied or exists(select 1 from public.fin_settlements s join public.fin_entries e on e.id=s.entry_id where e.quote_id=q) then raise exception 'Entrada insuficiente: %',coalesce(problem,'nenhum erro devolvido');end if;
+ r:=public.start_order_with_receipt(q,'production',current_date,'{"art_approved":true,"technique":"Silk"}','TESTE adiantamento ajustado',null,10,true,true,a,current_date,'Pix','TESTE — mensagem elegante e editável',request);
+ if (select stage from public.quotes where id=q)<>'production' or (select entry_percentage from public.quotes where id=q)<>50 or (select production->>'agreed_entry_amount' from public.quotes where id=q)::numeric<>10 then raise exception 'Produção ou preservação da condição original falhou';end if;
+ if (select amount from public.fin_entries where quote_id=q and installment=1)<>10 or (select amount from public.fin_entries where quote_id=q and installment=2)<>30 then raise exception 'Saldo após ajuste de entrada incorreto';end if;
+ again:=public.start_order_with_receipt(q,'production',current_date,'{"art_approved":true,"technique":"Silk"}','TESTE',null,10,true,true,a,current_date,'Pix','TESTE',request);
+ if again<>r or (select count(*) from public.payment_receipts where quote_id=q)<>1 or (select sum(s.amount) from public.fin_settlements s join public.fin_entries e on e.id=s.entry_id where e.quote_id=q and not s.reversed)<>10 then raise exception 'Repetição duplicou pagamento ou recibo';end if;
+ payload:=public.receipt_print_data(r);
+ if (payload->>'reversed')::boolean or (payload->'receipt'->'snapshot'->>'remaining')::numeric<>30 or payload->'receipt'->'snapshot'->>'message'<>'TESTE — mensagem elegante e editável' then raise exception 'Snapshot do recibo incorreto';end if;
+ denied:=false;begin perform public.issue_payment_receipt(q,1,'TESTE duplicação',gen_random_uuid());exception when others then denied:=true;end;if not denied then raise exception 'Recibo superou valor recebido disponível';end if;
+ update public.products set cost=12 where id=p;
+ q2:=public.create_quote_v3(c,'markup',50,current_date,'TESTE REVISÃO',jsonb_build_array(jsonb_build_object('product_id',p,'quantity',2,'custom_unit_price',18)),jsonb_build_object('revision_of',q,'entry_percentage',50));
+ if (select total from public.quotes where id=q)<>40 or (select total from public.quotes where id=q2)<>36 or (select revision_of from public.quotes where id=q2)<>q or (select cost_snapshot from public.quote_items where quote_id=q)<>10 then raise exception 'A revisão alterou o documento original';end if;
+ select s.id into s from public.fin_settlements s join public.fin_entries e on e.id=s.entry_id where e.quote_id=q and not s.reversed;
+ perform public.reverse_settlement(s,'TESTE — estorno do adiantamento');if not public.receipt_is_reversed(r) or not(public.receipt_print_data(r)->>'reversed')::boolean then raise exception 'Recibo não sinalizou recebimento estornado';end if;
+ perform public.admin_update_user(member_id,'member',true);
+ perform public.admin_set_permissions(member_id,'{"clients":{"view":true},"products":{"view":true},"quotes":{"view":true,"create":true,"price":false},"receipts":{"view":true,"create":false,"print":false}}');
+ if public.admin_user_permissions(member_id)->'quotes'->>'price'<>'false' then raise exception 'Permissão individual não foi salva';end if;
+ perform set_config('request.jwt.claim.sub',member_id::text,true);
+ if public.can('quotes','price') or public.can('receipts','print') or public.can('future_module','future_action') then raise exception 'Membro recebeu acesso não autorizado';end if;
+ select coalesce(data->>'method','markup'),coalesce((data->>'percentage')::numeric,30) into m,pct from public.settings;
+ default_price:=round(case when m='markup' then 12*(1+pct/100) else 12/(1-pct/100) end,2);
+ denied:=false;begin perform public.create_quote(c,m,pct,current_date,'TESTE SEM PERMISSÃO',jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1,'custom_unit_price',default_price+1)));exception when others then denied:=SQLERRM like 'Sem permissão para alterar preços%';end;if not denied then raise exception 'Alteração de preço foi permitida sem liberação';end if;
+ perform public.create_quote(c,m,pct,current_date,'TESTE PREÇO APROVADO',jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1)));
+ denied:=false;begin perform public.receipt_print_data(r);exception when others then denied:=true;end;if not denied then raise exception 'PDF liberado sem permissão';end if;
+ denied:=false;begin perform public.admin_users_v2();exception when others then denied:=true;end;if not denied then raise exception 'Membro acessou administração';end if;
+ perform set_config('request.jwt.claim.sub',current_setting('avelon.qa.owner'),true);
+ perform public.admin_set_permissions(member_id,'{"clients":{"view":true},"products":{"view":true},"quotes":{"view":true,"create":true,"price":true}}');
+ perform set_config('request.jwt.claim.sub',member_id::text,true);
+ perform public.create_quote(c,m,pct,current_date,'TESTE PREÇO LIBERADO',jsonb_build_array(jsonb_build_object('product_id',p,'quantity',1,'custom_unit_price',default_price+1)));
+ perform set_config('request.jwt.claim.sub',current_setting('avelon.qa.owner'),true);
+ denied:=false;begin perform public.admin_update_user(auth.uid(),'member',false);exception when others then denied:=true;end;if not denied then raise exception 'Mestre foi desativado';end if;
+end $$;
+reset role;
+select 'PASSOU: códigos, preços manuais, revisão, entrada ajustada, recibo/PDF, idempotência, estorno, Mestre e permissões individuais' as resultado;
+rollback;

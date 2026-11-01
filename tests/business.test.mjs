@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseStatement,parseMoney,parseDate,readCSV} from '../dist/js/core/statements.js';
-import {quotePrice,outstanding,ledgerBalance,financialSummary,assetPosition,configSection} from '../dist/js/core/business.js';
+import {quoteTotals,productionStage,STAGES,quotePrice,outstanding,ledgerBalance,financialSummary,assetPosition,configSection} from '../dist/js/core/business.js';
 test('preço preserva distinção entre acréscimo e margem',()=>{assert.equal(quotePrice(25,'markup',30),32.5);assert.equal(quotePrice(25,'margin',30),35.71);assert.ok(Number.isNaN(quotePrice(25,'margin',100)))});
 test('valores brasileiros, sinais e datas inválidas',()=>{assert.equal(parseMoney('R$ 1.234,56'),1234.56);assert.equal(parseMoney('(42,50)'),-42.5);assert.equal(parseMoney('1,234.56'),1234.56);assert.throws(()=>parseMoney('1,234'));assert.throws(()=>parseDate('31/02/2026'));assert.equal(parseDate('20260228120000[-3:BRT]'),'2026-02-28')});
 test('CSV com separador e quebra de linha em campo entre aspas',()=>{assert.deepEqual(readCSV('data;descrição;valor\r\n31/10/2026;"Pix; cliente\nA";50,00'),[['data','descrição','valor'],['31/10/2026','Pix; cliente\nA','50,00']]);assert.throws(()=>readCSV('a;"b'))});
@@ -12,3 +12,8 @@ test('depreciação começa no mês seguinte e respeita residual',()=>{const ass
 test('padrões de cada área aceitam personalização sem perder campos',()=>{assert.equal(configSection({finance:{reconcile_days:10}},'finance').reconcile_days,10);assert.ok(configSection({finance:{reconcile_days:10}},'finance').categories.includes('Vendas'));assert.equal(configSection({},'production').require_deposit,true)});
 
 test('saldo de abertura futuro não antecipa dinheiro disponível',()=>{assert.equal(ledgerBalance({id:'x',opening_balance:100,opening_date:'2027-01-01'},[],[],'2026-12-31'),0)});
+
+test('preço manual recalcula margem e preserva a sugestão',()=>{const p=[{id:'p',cost:10}],q=quoteTotals([{product_id:'p',quantity:2,custom_unit_price:20}],p,'markup',50);assert.equal(q.sales,40);assert.equal(q.cost,20);assert.equal(q.margin,50);assert.equal(q.lines[0].suggested,15);assert.equal(q.lines[0].overridden,true)});
+test('desconto abaixo do custo e venda zero não escondem o prejuízo',()=>{const p=[{id:'p',cost:10}];assert.equal(quoteTotals([{product_id:'p',quantity:2,custom_unit_price:7.5}],p,'markup',50).margin,-33.33);const zero=quoteTotals([{product_id:'p',quantity:2,custom_unit_price:0}],p,'markup',50);assert.equal(zero.margin,null);assert.equal(zero.profit,-20)});
+test('sugerido pode ser restaurado e arredondamento é por unidade',()=>{const p=[{id:'p',cost:.1}],q=quoteTotals([{product_id:'p',quantity:3,custom_unit_price:.335}],p,'markup',50);assert.equal(q.sales,1.02);assert.equal(quoteTotals([{product_id:'p',quantity:1,custom_unit_price:null}],p,'markup',50).sales,.15)});
+test('costura e etapas personalizadas são reconhecidas como produção',()=>{assert.equal(productionStage('sewing',STAGES),true);assert.equal(productionStage('sent',STAGES),false);assert.equal(productionStage('custom',[{key:'custom',requires_production:true}]),true)});
