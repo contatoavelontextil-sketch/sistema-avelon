@@ -1,0 +1,26 @@
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub',public.workspace_owner()::text,true);
+do $$ declare c uuid;p uuid;q uuid;a uuid;e uuid;advance uuid;final_id uuid;again uuid;before_count bigint;request uuid:=gen_random_uuid();denied boolean:=false;payload jsonb;begin
+ insert into public.clients(kind,name) values('PF','TESTE RECIBO FINAL') returning id into c;
+ insert into public.products(name,cost,retail,wholesale) values('TESTE RECIBO FINAL',10,20,20) returning id into p;
+ q:=public.create_quote_v3(c,'markup',100,current_date,'TESTE RECIBO FINAL',jsonb_build_array(jsonb_build_object('product_id',p,'quantity',5)),'{"entry_percentage":50,"technique":"Silk"}');
+ a:=public.save_account(null,'TESTE RECIBO FINAL',0,current_date,true);
+ advance:=public.start_order_with_receipt(q,'production',current_date,'{"art_approved":true,"technique":"Silk"}','TESTE',null,50,true,false,a,current_date,'Pix','TESTE',gen_random_uuid());
+ begin perform public.complete_order_with_receipt(q,'completed',current_date,'{"art_approved":true}','TESTE',null,gen_random_uuid());exception when others then denied:=true;end;
+ if not denied or (select stage from public.quotes where id=q)='completed' then raise exception 'Finalização sem quitação não foi bloqueada';end if;
+ select id into e from public.fin_entries where quote_id=q and installment=2;
+ perform public.settle_entry(e,a,50,current_date,'Pix · TESTE',gen_random_uuid());
+ select count(*) into before_count from public.fin_settlements;
+ final_id:=public.complete_order_with_receipt(q,'completed',current_date,'{"art_approved":true,"technique":"Silk"}','TESTE conclusão',null,request);
+ again:=public.complete_order_with_receipt(q,'completed',current_date,'{"art_approved":true}','TESTE',null,request);
+ if final_id<>again or final_id<>public.issue_final_receipt(q,gen_random_uuid()) then raise exception 'Recibo final duplicado';end if;
+ if before_count<>(select count(*) from public.fin_settlements) then raise exception 'Finalização duplicou caixa';end if;
+ payload:=public.receipt_print_data(final_id);
+ if payload->'receipt'->>'kind'<>'final' or (payload->'receipt'->'snapshot'->>'remaining')::numeric<>0 or jsonb_array_length(payload->'receipt'->'snapshot'->'payments')<>2 or jsonb_array_length(payload->'receipt'->'snapshot'->'advance_receipts')<>1 then raise exception 'Consolidação incompleta';end if;
+ perform public.reverse_settlement((select id from public.fin_settlements where entry_id=e),'TESTE estorno');
+ if not public.receipt_is_reversed(final_id) then raise exception 'Recibo final não sinalizou estorno';end if;
+end $$;
+reset role;
+select 'PASSOU: quitação obrigatória, pagamentos e adiantamento consolidados, saldo zero, idempotência, caixa preservado e estorno' as resultado;
+rollback;

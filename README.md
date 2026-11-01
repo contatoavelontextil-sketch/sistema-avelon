@@ -10,7 +10,7 @@ Sirva `dist/` com um servidor HTTP. Não há dependências de compilação. `dis
 
 ## Banco e acesso
 
-Migrações `001` a `013` em ordem, incluindo `005b` depois de `005`. Não reaplicar no projeto já configurado. A equipe aprovada trabalha na base compartilhada da empresa, com autorização por módulo e operação. O proprietário é protegido. Novos membros começam inativos e sem liberações. Não há credenciais administrativas no aplicativo.
+Migrações `001` a `014` em ordem, incluindo `005b` depois de `005`. Não reaplicar no projeto já configurado. A equipe aprovada trabalha na base compartilhada da empresa, com autorização por módulo e operação. O proprietário é protegido. Novos membros começam inativos e sem liberações. Não há credenciais administrativas no aplicativo.
 
 As gravações financeiras usam funções autorizadas no servidor. Não há permissão direta de escrita nas tabelas financeiras. O histórico mantém baixas estornadas e títulos cancelados. Exclusões de clientes/produtos vinculados a propostas são bloqueadas pelo banco.
 
