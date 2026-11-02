@@ -17,4 +17,6 @@
 
 .month-movement-values{margin:14px 0 10px;display:grid;gap:10px}.month-movement-values>div{display:flex;justify-content:space-between;gap:10px;align-items:baseline}.month-movement-values dt{font-size:11px;color:#707568}.month-movement-values dd{font:700 17px Manrope,sans-serif;margin:0;white-space:nowrap}.month-movement small{display:block;line-height:1.5}
 
-.dashboard-metrics{grid-template-columns:repeat(5,minmax(0,1fr))}.sales-total{border-color:#b7c6a5;background:#f8faf4}.sales-total>strong{font-size:clamp(20px,1.85vw,28px)}@media(max-width:1250px){.dashboard-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-metrics .sales-total{grid-column:1/-1}.sales-total>strong{font-size:28px}}
+.dashboard-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.sales-total{border-color:#b7c6a5;background:#f8faf4}.sales-total>strong{font-size:clamp(20px,1.85vw,28px)}@media(max-width:1250px){.dashboard-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-metrics .sales-total{grid-column:1/-1}.sales-total>strong{font-size:28px}}
+
+.expenses-total{border-color:#decbb1;background:#fcfaf5}.expenses-total>strong{font-size:clamp(20px,1.85vw,28px)}@media(max-width:760px){.expenses-total>strong{font-size:24px}}
