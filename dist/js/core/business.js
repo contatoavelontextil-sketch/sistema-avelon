@@ -25,3 +25,12 @@ export function quotePrice(cost,method,percentage){cost=Number(cost);percentage=
 
 export function quoteTotals(items,products,method,percentage){const lines=items.map(item=>{const p=products.find(p=>p.id===item.product_id),suggested=quotePrice(p?.cost,method,Number(percentage)),price=item.custom_unit_price==null?suggested:round(Number(item.custom_unit_price)),quantity=Number(item.quantity),cost=Number(p?.cost);return {...item,suggested,price,quantity,cost,overridden:item.custom_unit_price!=null&&price!==suggested}});const sales=round(lines.reduce((n,l)=>n+l.price*l.quantity,0)),cost=round(lines.reduce((n,l)=>n+l.cost*l.quantity,0));return {lines,sales,cost,profit:round(sales-cost),margin:sales>0?round((sales-cost)/sales*100):null};}
 export const productionStage=(key,stages)=>['production','cutting','personalization','sewing','ready'].includes(key)||stages.some(s=>s.key===key&&s.requires_production);
+
+// Date-only arithmetic avoids time-zone and daylight-saving shifts.
+export function productionDeadline(createdAt,deliveryDate,fallbackDays){
+ const issued=/^\d{4}-\d{2}-\d{2}$/.test(createdAt||'')?createdAt:new Date(createdAt).toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
+ const parse=value=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return NaN;const n=Date.parse(value+'T00:00:00Z');return Number.isFinite(n)&&new Date(n).toISOString().slice(0,10)===value?n:NaN};
+ if(deliveryDate){const start=parse(issued),end=parse(deliveryDate);if(!Number.isFinite(start)||!Number.isFinite(end))return null;const direction=end>=start?1:-1;let days=0;for(let d=start+direction*86400000;direction>0?d<=end:d>=end;d+=direction*86400000){const weekday=new Date(d).getUTCDay();if(weekday!==0&&weekday!==6)days+=direction}return {days,delivery:deliveryDate,from:issued,overdue:end<start}}
+
+ return Number(fallbackDays)>0?{days:Number(fallbackDays),delivery:null,from:null}:null;
+}

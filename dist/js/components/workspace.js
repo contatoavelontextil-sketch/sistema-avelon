@@ -1,5 +1,5 @@
-import {salesReceived,expensesPaid} from '../core/dashboard-totals.js?v=20261103-v8b';
-import {configSection,financialSummary,ledgerBalance,outstanding,today,round} from '../core/business.js?v=20261103-v8b';
+import {salesReceived,expensesPaid} from '../core/dashboard-totals.js?v=20261104-v9a';
+import {configSection,financialSummary,ledgerBalance,outstanding,today,round} from '../core/business.js?v=20261104-v9a';
 export function install(ctx){
  const navigation={home:['Visão geral','home'],workflow:['Pedidos e produção','workflow'],quotes:['Orçamentos','quotes'],finance:['Financeiro','finance'],bank:['Extratos e conciliação','bank'],reports:['Relatórios','reports'],clients:['Clientes','clients'],products:['Produtos','products'],assets:['Ativos e patrimônio','assets'],settings:['Configurações','settings'],users:['Usuários e acessos','users']};
  function toast(message){const n=ctx.$('#toast');n.textContent=message;n.className='show';clearTimeout(ctx.toastTimer);ctx.toastTimer=setTimeout(()=>n.className='',5000)}

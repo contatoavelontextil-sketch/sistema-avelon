@@ -1,4 +1,4 @@
-import {CLASSES,configSection,outstanding,paidFor,ledgerBalance,today,round} from '../core/business.js?v=20261103-v8b';
+import {CLASSES,configSection,outstanding,paidFor,ledgerBalance,today,round} from '../core/business.js?v=20261104-v9a';
 export function install(ctx){
  const b=()=>ctx.business||{};let selectedTab='income';
  const accountsOptions=()=>b().accounts.filter(a=>a.active).map(a=>`<option value="${a.id}">${ctx.esc(a.name)}</option>`).join('');

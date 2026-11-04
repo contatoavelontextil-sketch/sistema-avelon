@@ -33,19 +33,26 @@ async function renderPDF(article,filename){
 }
 export function install(ctx){
  let preparing=false;
- ctx.shareDocument=async({filename,title,authorize,button})=>{
-  if(preparing)return;preparing=true;if(button){button.disabled=true;button.textContent='Preparando PDF…'}
+ ctx.shareDocument=async({filename,title,authorize,button,onExport,downloadOnly=false})=>{
+  if(preparing)return;const originalLabel=button?.textContent;preparing=true;if(button){button.disabled=true;button.textContent='Preparando PDF…'}
   try{
    await authorize();if(button){button=document.getElementById(button.id)||button;button.disabled=true;button.textContent='Preparando PDF…'}const article=document.querySelector('article.quote-print');if(!article)throw new Error('Abra o documento e tente novamente.');
    const file=await renderPDF(article,filename),url=URL.createObjectURL(file);
    let canShare=false;try{canShare=!!navigator.share&&!!navigator.canShare?.({files:[file]})}catch{}
    const d=ctx.modal('PDF pronto para enviar',`<p><strong>${ctx.esc(filename)}</strong></p><p class="muted">${canShare?'Toque em Compartilhar PDF e escolha WhatsApp, e-mail ou outro aplicativo disponível no seu aparelho.':'Este navegador não oferece compartilhamento de arquivos. Baixe o PDF e anexe no WhatsApp, e-mail ou outro aplicativo.'}</p><p class="helper muted">Confira o destinatário no aplicativo escolhido antes de enviar.</p><p role="alert" class="form-error" id="pdf-share-error"></p><div class="form-actions">${canShare?'<button class="primary" id="pdf-native-share">Compartilhar PDF</button>':''}<a class="button secondary" id="pdf-download">Baixar PDF</a><button class="secondary" data-close>Fechar</button></div>`);
    const download=d.querySelector('#pdf-download');download.href=url;download.download=filename;
+   let completing=false;
+   const reportError=()=>{d.querySelector('#pdf-share-error').textContent='Não foi possível atualizar o orçamento para Enviado. Tente novamente; o arquivo continua disponível nesta janela.'};
+   download.addEventListener('click',async e=>{
+    if(!onExport)return;e.preventDefault();if(completing)return;completing=true;download.setAttribute('aria-disabled','true');
+    try{await onExport('download');const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();d.querySelector('#pdf-share-error').textContent=''}catch{reportError()}finally{completing=false;download.removeAttribute('aria-disabled')}
+   });
    d.addEventListener('close',()=>{setTimeout(()=>URL.revokeObjectURL(url),60000)},{once:true});
    d.querySelector('#pdf-native-share')?.addEventListener('click',async e=>{
     const b=e.currentTarget;b.disabled=true;d.querySelector('#pdf-share-error').textContent='';
-    try{await navigator.share({files:[file],title})}catch(error){if(error.name!=='AbortError')d.querySelector('#pdf-share-error').textContent='O compartilhamento não está disponível agora. Tente novamente ou baixe o PDF para enviar.'}finally{b.disabled=false}
+    try{await navigator.share({files:[file],title});if(onExport){try{await onExport('share')}catch{reportError()}}}catch(error){if(error.name!=='AbortError')d.querySelector('#pdf-share-error').textContent='O compartilhamento não está disponível agora. Tente novamente ou baixe o PDF para enviar.'}finally{b.disabled=false}
    });
-  }catch(e){ctx.toast(e.message)}finally{preparing=false;if(button?.isConnected){button.disabled=false;button.textContent='Compartilhar PDF'}}
+   if(downloadOnly)download.click();
+  }catch(e){ctx.toast(e.message)}finally{preparing=false;if(button?.isConnected){button.disabled=false;button.textContent=originalLabel}}
  };
 }
