@@ -34,3 +34,6 @@ export function productionDeadline(createdAt,deliveryDate,fallbackDays){
 
  return Number(fallbackDays)>0?{days:Number(fallbackDays),delivery:null,from:null}:null;
 }
+
+export function quoteReference(q){return String(q.base_number??q.number).padStart(4,'0')+(Number(q.revision_no)>0?' Rev. '+String(q.revision_no).padStart(2,'0'):'')}
+export const currentQuoteVersions=quotes=>quotes.filter(q=>!q.superseded_by);

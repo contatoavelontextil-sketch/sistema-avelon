@@ -1,0 +1,23 @@
+begin;
+select set_config('request.jwt.claim.sub',public.workspace_owner()::text,true);
+do $$declare c uuid;p uuid;q0 uuid;q1 uuid;q2 uuid;r public.quotes;original_total numeric;meta jsonb;item jsonb;failed boolean;begin
+ select id into c from public.clients where user_id=public.workspace_owner() limit 1;
+ select id into p from public.products where user_id=public.workspace_owner() limit 1;
+ item:=jsonb_build_array(jsonb_build_object('product_id',p,'quantity',2));meta:=jsonb_build_object('entry_percentage',50,'delivery_date','2026-12-01','technique','Silk');
+ q0:=public.create_quote_v3(c,'markup',30,'2026-12-01','TESTE TRANSACIONAL REVISÕES',item,meta);
+ select total into original_total from public.quotes where id=q0;
+ q1:=public.create_quote_v3(c,'markup',40,'2026-12-02','Rev 01',item,meta||jsonb_build_object('revision_of',q0));
+ q2:=public.create_quote_v3(c,'markup',50,'2026-12-03','Rev 02',item,meta||jsonb_build_object('revision_of',q1));
+ select * into r from public.quotes where id=q2;
+ if r.revision_no<>2 or r.base_number<>(select number from public.quotes where id=q0) or r.revision_root<>q0 then raise exception 'Numeração de revisão incorreta';end if;
+ if (select count(*) from public.quotes where coalesce(revision_root,id)=q0 and superseded_by is null)<>1 then raise exception 'Versões duplicadas no painel';end if;
+ if (select total from public.quotes where id=q0)<>original_total then raise exception 'Preço histórico alterado';end if;
+ if r.stage<>'draft' or (r.production->>'art_approved')::boolean then raise exception 'Revisão herdou aprovação';end if;
+ failed:=false;begin perform public.create_quote_v3(c,'markup',50,'2026-12-03','stale',item,meta||jsonb_build_object('revision_of',q0));exception when others then failed:=true;end;if not failed then raise exception 'Origem antiga aceita';end if;
+ failed:=false;begin perform public.update_order(q0,'sent',null,'{}','TESTE',null);exception when others then failed:=true;end;if not failed then raise exception 'Versão antiga editável';end if;
+ insert into public.fin_entries(kind,class,category,description,amount,due_date,competence,quote_id,installment) values('income','revenue','Vendas','Pedido #'||r.number||' · entrada',10,'2026-12-01','2026-12-01',q2,1);
+ if not exists(select 1 from public.fin_entries where quote_id=q2 and description='Pedido #'||r.base_number||' Rev. 02 · entrada') then raise exception 'Referência financeira incorreta';end if;
+ failed:=false;begin perform public.create_quote_v3(c,'markup',50,'2026-12-03','financial',item,meta||jsonb_build_object('revision_of',q2));exception when others then failed:=true;end;if not failed then raise exception 'Revisão alterou negociação com financeiro ativo';end if;
+end $$;
+select 'Revisões OK: número mantido, sequência, histórico, uma versão atual e proteção financeira. Testes revertidos.' as resultado;
+rollback;
