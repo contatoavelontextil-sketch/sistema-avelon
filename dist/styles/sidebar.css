@@ -1,5 +1,6 @@
 /* Matches the background sampled from the original Avelon logo (#101519). */
-.sidebar{background:#101519}
+.sidebar,.login-art{background:#101519}
+.login-art:after{display:none}
 .sidebar .nav{scrollbar-width:thin;scrollbar-color:#71808a #101519}
 .sidebar .nav::-webkit-scrollbar{width:8px;height:7px}
 .sidebar .nav::-webkit-scrollbar-track{background:#101519}
