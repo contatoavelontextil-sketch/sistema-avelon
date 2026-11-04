@@ -1,4 +1,4 @@
-import {configSection,STAGES,today} from '../core/business.js?v=20261104-v10a';
+import {configSection,STAGES,today} from '../core/business.js?v=20261104-v10b';
 export function install(ctx){
  const areas=[['company','Empresa e documentos','settings_company'],['budget','Orçamentos','settings_quotes'],['production','Produção e etapas','settings_production'],['finance','Financeiro e extratos','settings_finance'],['reports','Relatórios e PDF','settings_reports'],['appearance','Aparência e menu','settings_appearance']];
  const titles={home:'Visão geral',workflow:'Quadro de pedidos',quotes:'Orçamentos',finance:'Financeiro',bank:'Extratos e conciliação',reports:'Relatórios',clients:'Clientes',products:'Produtos',assets:'Patrimônio',settings:'Configurações',users:'Usuários'};
