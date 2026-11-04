@@ -1,4 +1,4 @@
-import {outstanding,productionStage} from './business.js?v=20261104-v11a';
+import {outstanding,productionStage} from './business.js?v=20261104-v12a';
 // Commercial proposals, physical production and financial obligations are independent.
 export function dashboardAlerts(quotes,entries,settlements,stages,today){
  const commercial=quotes.filter(q=>['draft','sent','awaiting_deposit'].includes(q.stage));

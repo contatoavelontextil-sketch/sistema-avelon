@@ -1,4 +1,4 @@
-import {round} from './business.js?v=20261104-v11a';
+import {round} from './business.js?v=20261104-v12a';
 // Counts cash received for sales, never quote totals plus their settlements.
 export function salesReceived(entries,settlements,through){
  const sales=new Set(entries.filter(e=>!e.voided&&e.kind==='income'&&e.class==='revenue'&&!/^rendimentos?$/i.test((e.category||'').trim())).map(e=>e.id));

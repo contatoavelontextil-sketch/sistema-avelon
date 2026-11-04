@@ -1,7 +1,8 @@
-@import url('./styles/base.css?v=20261104-v11a');
-@import url('./styles/responsive.css?v=20261104-v11a');
-@import url('./styles/print.css?v=20261104-v11a');
-@import url('./styles/workspace.css?v=20261104-v11a');
-@import url('./styles/document-pdf.css?v=20261104-v11a');
-@import url('./styles/sidebar.css?v=20261104-v11a');
-@import url('./styles/dashboard-alerts.css?v=20261104-v11a');
+@import url('./styles/base.css?v=20261104-v12a');
+@import url('./styles/responsive.css?v=20261104-v12a');
+@import url('./styles/print.css?v=20261104-v12a');
+@import url('./styles/workspace.css?v=20261104-v12a');
+@import url('./styles/document-pdf.css?v=20261104-v12a');
+@import url('./styles/sidebar.css?v=20261104-v12a');
+@import url('./styles/dashboard-alerts.css?v=20261104-v12a');
+@import url('./styles/app-install.css?v=20261104-v12a');
