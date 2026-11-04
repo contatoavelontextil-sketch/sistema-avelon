@@ -1,4 +1,4 @@
-import {configSection,today,round,quoteTotals,productionDeadline} from '../core/business.js?v=20261104-v9a';
+import {configSection,today,round,quoteTotals,productionDeadline} from '../core/business.js?v=20261104-v10a';
 // Functions receive shared services and state through an explicit application context.
 export function install(ctx){
 function quoteTable(list){return list.length?`<div class="table-wrap"><table><thead><tr><th>Orçamento</th><th>Cliente</th><th>Emissão</th><th>Total</th><th>Etapa</th><th></th></tr></thead><tbody>${list.map(q=>`<tr><td><strong>#${String(q.number).padStart(4,'0')}</strong></td><td>${ctx.esc(q.client_snapshot.name)}</td><td>${ctx.date(q.created_at)}</td><td class="nowrap">${ctx.money(q.total)}</td><td>${ctx.stageBadge?ctx.stageBadge(q):ctx.esc(q.stage||"Rascunho")}</td><td><button class="secondary small" data-view="${q.id}">Abrir ${ctx.icon('arrow')}</button></td></tr>`).join('')}</tbody></table></div>`:ctx.empty('Seu próximo pedido começa aqui.','Crie um orçamento para acompanhar os valores e compartilhar com seu cliente.')}
