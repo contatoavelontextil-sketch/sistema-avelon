@@ -1,3 +1,4 @@
+import {install as installRegisterFields} from './modules/register-fields.js?v=20261111-v15a';
 import {install as installAttachments} from './modules/attachments.js?v=20261111-v15a';
 import {install as installRegistries} from './modules/registries.js?v=20261111-v15a';
 import {install as installAppUpdates} from './core/app-updates.js?v=20261111-v15a';
@@ -42,7 +43,7 @@ installReports(ctx);
 installPermissions(ctx);
 installPermissionEditor(ctx);
 installAppInstallation(ctx);
-installRegistries(ctx);
+installRegistries(ctx);installRegisterFields(ctx);
 installAttachments(ctx);
 installAppUpdates(ctx);
 ctx.start();
