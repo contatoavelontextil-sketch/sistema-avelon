@@ -35,3 +35,12 @@
 @media print{.final-receipt .document-brand{height:90px}}
 
 .register-field-controls{grid-column:1/-1}.register-field-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}.register-picker-list{display:flex;flex-direction:column;gap:7px;max-height:340px;overflow:auto;margin-bottom:18px}.register-picker-row{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:4px;width:100%}.register-picker-row small{color:var(--muted);font-weight:400}
+
+.workspace button.secondary,dialog button.secondary{background:#eaf2f8;border-color:#bfd1df;color:#234b68}
+.workspace button.secondary:hover,dialog button.secondary:hover{background:#dceaf5;border-color:#8eafc8;color:#173d59}
+.product-field-actions{display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin:0 0 15px}
+.financial-description-field>.field{margin-bottom:7px}
+.product-field-actions>p{margin:0}.product-field-actions>p:empty{display:none}
+button.action-link{display:inline-flex;align-self:flex-start;padding:0;min-height:0;border:0;border-radius:3px;background:transparent;color:#1766b0;font-size:12px;font-weight:600;text-decoration:underline;text-underline-offset:3px;line-height:1.7;cursor:pointer}
+button.action-link:hover{background:transparent;color:#104a82}
+button.action-link:focus-visible{outline:2px solid #1766b0;outline-offset:3px}
