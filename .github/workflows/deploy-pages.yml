@@ -55,6 +55,24 @@ jobs:
         run: find dist -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Testar regras de negócio
         run: if [ -f tests/business.test.mjs ]; then node --test tests/business.test.mjs; fi
+      - name: Identificar a versão e renovar o cache dos arquivos
+        run: |
+          python3 - <<'PYRELEASE'
+          import datetime, json, pathlib, re, subprocess
+          root = pathlib.Path('dist')
+          build = subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()[:16]
+          published = datetime.datetime.now(datetime.timezone.utc).isoformat()
+          for path in root.rglob('*'):
+              if path.suffix in ('.js','.css','.html') and 'vendor' not in path.parts:
+                  source = path.read_text(encoding='utf-8-sig')
+                  path.write_text(re.sub(r'([?&]v=)[A-Za-z0-9._-]+',lambda m:m.group(1)+build,source),encoding='utf-8')
+          index = root / 'index.html'
+          html = index.read_text(encoding='utf-8')
+          html = re.sub(r'<meta name="avelon-build(?:-time)?"[^>]*>','',html)
+          html = html.replace('</head>',f'<meta name="avelon-build" content="{build}"><meta name="avelon-build-time" content="{published}"></head>')
+          index.write_text(html,encoding='utf-8')
+          (root / 'release.json').write_text(json.dumps({'build':build,'published_at':published})+'\n',encoding='utf-8')
+          PYRELEASE
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
