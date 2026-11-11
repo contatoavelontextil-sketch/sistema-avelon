@@ -20,3 +20,5 @@
 .dashboard-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.sales-total{border-color:#b7c6a5;background:#f8faf4}.sales-total>strong{font-size:clamp(20px,1.85vw,28px)}@media(max-width:1250px){.dashboard-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-metrics .sales-total{grid-column:1/-1}.sales-total>strong{font-size:28px}}
 
 .expenses-total{border-color:#decbb1;background:#fcfaf5}.expenses-total>strong{font-size:clamp(20px,1.85vw,28px)}@media(max-width:760px){.expenses-total>strong{font-size:24px}}
+
+#order-reason-field[hidden],.form-actions [hidden]{display:none!important}
