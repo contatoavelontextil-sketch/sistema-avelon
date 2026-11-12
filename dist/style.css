@@ -17,3 +17,6 @@
 /* A barra superior controla o quadro; as barras internas das colunas permanecem. */
 .kanban{scrollbar-width:none}.kanban::-webkit-scrollbar{display:none}
 
+.asset-actions{display:flex;gap:6px;flex-wrap:wrap}
+.asset-label-preview{display:grid;justify-items:center;gap:10px}
+.asset-label-preview img{width:190px;height:190px;image-rendering:pixelated}

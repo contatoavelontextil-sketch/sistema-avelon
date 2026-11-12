@@ -1,3 +1,4 @@
+import {install as installAssets} from './modules/assets.js?v=20261111-v15a';
 import {install as installStorageManager} from './modules/storage-manager.js?v=20261111-v15a';
 import {install as installUsage} from './modules/usage.js?v=20261111-v15a';
 import {install as installHelp} from './modules/help.js?v=20261111-v15a';
@@ -43,6 +44,7 @@ installWorkflow(ctx);
 installFinance(ctx);
 installBank(ctx);
 installReports(ctx);
+installAssets(ctx);
 installPermissions(ctx);
 installPermissionEditor(ctx);
 installAppInstallation(ctx);
