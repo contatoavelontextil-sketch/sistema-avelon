@@ -49,7 +49,9 @@ export function install(ctx){
    const qr=qrcode(0,'M');qr.addData(link);qr.make();
    const image=document.createElement('img');
    image.src=qr.createDataURL(5);image.alt='QR Code de '+code(a.asset_number);
-   preview.append(image);
+   const logo=document.createElement('img');
+   logo.className='asset-label-logo';logo.src='./logo-document.png';logo.alt='Avelon Têxtil';
+   preview.append(logo,image);
    const print=document.createElement('a');
    print.textContent='Abrir etiqueta para imprimir';print.href=labelUrl(a.label_token,true);
    print.target='_blank';print.rel='noopener noreferrer';preview.append(print);

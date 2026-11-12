@@ -23,7 +23,9 @@ async function show(){
    const tag=document.createElement('div');tag.className='tag';
    const image=document.createElement('img');image.src=qr.createDataURL(6);image.alt='QR Code de '+code;
    const details=document.createElement('div');
-   details.append(element('strong',asset.company),element('strong',code),element('span',asset.name));
+   const logo=document.createElement('img');
+   logo.className='tag-logo';logo.src='./logo-document.png';logo.alt=asset.company;
+   details.append(logo,element('strong',asset.company),element('strong',code),element('span',asset.name));
    tag.append(image,details);
    const print=element('button','Imprimir etiqueta');print.onclick=()=>window.print();
    panel.replaceChildren(tag,print);
