@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {helpArticles,helpFaqs,searchHelp} from '../dist/js/core/help-content.js';
+import {usageNumbers} from '../dist/js/modules/usage.js';
+import {install as permissions} from '../dist/js/core/permissions.js';
+test('ajuda pesquisa sem acentos, por todos os termos e por categoria',()=>{assert.ok(searchHelp(helpArticles,'conciliação').some(a=>a.id==='conciliacao'));assert.ok(searchHelp(helpArticles,'MARGEM venda').some(a=>a.id==='margem'));assert.equal(searchHelp(helpArticles,'impossivel-xpto').length,0);assert.ok(searchHelp(helpArticles,'','Financeiro').every(a=>a.category==='Financeiro'));assert.equal(new Set(helpArticles.map(a=>a.id)).size,helpArticles.length);for(const f of helpFaqs)assert.ok(helpArticles.some(a=>a.id===f.article))});
+test('uso diferencia indisponível, ocupado e referência livre, sem barra negativa',()=>{assert.equal(usageNumbers(null,100),null);assert.equal(usageNumbers(-1,100),null);assert.deepEqual(usageNumbers(25,100),{used:25,limit:100,free:75,percent:25});assert.equal(usageNumbers(150,100).free,0)});
+test('painel de uso é exclusivo de mestre ativo, não apenas admin',()=>{for(const profile of [{active:true,role:'admin'},{active:true,role:'member'},{active:false,is_owner:true}]){const ctx={profile};permissions(ctx);assert.equal(ctx.routeAllowed('usage'),false)}const ctx={profile:{active:true,is_owner:true}};permissions(ctx);assert.equal(ctx.routeAllowed('usage'),true);assert.equal(ctx.routeAllowed('help'),true)});

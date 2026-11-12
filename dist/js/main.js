@@ -1,3 +1,5 @@
+import {install as installUsage} from './modules/usage.js?v=20261111-v15a';
+import {install as installHelp} from './modules/help.js?v=20261111-v15a';
 import {install as installRegisterFields} from './modules/register-fields.js?v=20261111-v15a';
 import {install as installAttachments} from './modules/attachments.js?v=20261111-v15a';
 import {install as installRegistries} from './modules/registries.js?v=20261111-v15a';
@@ -46,4 +48,5 @@ installAppInstallation(ctx);
 installRegistries(ctx);installRegisterFields(ctx);
 installAttachments(ctx);
 installAppUpdates(ctx);
+installHelp(ctx);installUsage(ctx);
 ctx.start();

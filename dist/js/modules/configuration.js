@@ -1,7 +1,7 @@
 import {configSection,STAGES,today} from '../core/business.js?v=20261111-v15a';
 export function install(ctx){
  const areas=[['company','Empresa e documentos','settings_company'],['budget','Orçamentos','settings_quotes'],['production','Produção e etapas','settings_production'],['finance','Financeiro e extratos','settings_finance'],['reports','Relatórios e PDF','settings_reports'],['appearance','Aparência e menu','settings_appearance']];
- const titles={home:'Visão geral',workflow:'Quadro de pedidos',quotes:'Orçamentos',finance:'Financeiro',bank:'Extratos e conciliação',reports:'Relatórios',clients:'Clientes',products:'Produtos',suppliers:'Fornecedores',assets:'Patrimônio',settings:'Configurações',users:'Usuários'};
+ const titles={home:'Visão geral',workflow:'Quadro de pedidos',quotes:'Orçamentos',finance:'Financeiro',bank:'Extratos e conciliação',reports:'Relatórios',clients:'Clientes',products:'Produtos',suppliers:'Fornecedores',assets:'Patrimônio',settings:'Configurações',users:'Usuários',help:'Central de ajuda',usage:'Uso e armazenamento'};
  let section='company';
  const check=(label,name,value)=>`<label class="check-row"><input type="checkbox" name="${name}" ${value?'checked':''}>${label}</label>`;
  const text=(label,name,value,attrs='')=>`<label class="field">${label}<textarea name="${name}" ${attrs}>${ctx.esc(value||'')}</textarea></label>`;
