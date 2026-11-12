@@ -21,4 +21,4 @@
 .asset-label-preview{display:grid;justify-items:center;gap:10px}
 .asset-label-preview img{width:190px;height:190px;image-rendering:pixelated}
 
-.asset-label-preview img.asset-label-logo{width:130px;height:48px;object-fit:contain;image-rendering:auto}
+.asset-label-preview img.asset-label-logo{width:130px;height:48px;object-fit:cover;object-position:center 48%;image-rendering:auto}
