@@ -7,10 +7,10 @@ export const textileCategories = {
 };
 export const fold = value => String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
 const fixed = new Set(['aluguel','energia','agua','internet','contabilidade','software e assinaturas']);
-export function financeGroup(entry){
+export function financeGroup(entry,settings){
  if(entry.class==='transfer')return 'transfer';
  if(entry.kind==='income')return 'income';
- const category=fold(entry.category);
+ const category=fold(settings?.finance?.category_aliases?.[entry.category]||entry.category);
  if(category==='pro-labore')return 'payroll';
  if(entry.class==='equity')return 'partners';
  if(entry.recurring_id||fixed.has(category))return 'fixed';
@@ -26,8 +26,8 @@ const hierarchy = [
  ['Patrimônio e movimentações', [['Ativos',textileCategories.asset],['Sócios',textileCategories.equity],['Transferências',['Transferência','Transferência conta ↔ cofrinho','Transferência própria — origem/destino externo']]]],
  ['Outras categorias', [['Revisão e categorias personalizadas',['Outros','Revisar classificação']]]]
 ];
-export function categoryPlan(names){
- const remaining=new Map(names.map(name=>[fold(name),name]));
+export function categoryPlan(names,aliases={}){
+ const remaining=new Map(names.map(name=>[fold(aliases[name]||name),name]));
  return hierarchy.flatMap(([group,sections],i)=>sections.map(([section,items],j)=>{
   const prefix=(i+1)+'.'+(j+1);
   const leaves=items.flatMap((label,k)=>{
@@ -39,4 +39,9 @@ export function categoryPlan(names){
   if(i===hierarchy.length-1)for(const name of remaining.values())leaves.push({name,code:prefix+'.'+(items.length+leaves.length+1)});
   return {group:(i+1)+' '+group,section:prefix+' '+section,leaves};
  }));
+}
+
+export function categoryLabels(settings){
+ const finance=settings?.finance||{};
+ return new Map(categoryPlan(finance.categories||Object.values(textileCategories).flat(),finance.category_aliases).flatMap(g=>g.leaves.map(c=>[c.name,c.code+' · '+c.name])));
 }
