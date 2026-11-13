@@ -22,3 +22,5 @@
 .asset-label-preview img{width:190px;height:190px;image-rendering:pixelated}
 
 .asset-label-preview img.asset-label-logo{width:130px;height:48px;object-fit:cover;object-position:center 48%;image-rendering:auto}
+
+.select-search{align-self:flex-start;margin:3px 0}.select-search-dialog{width:min(540px,90vw)}.select-search-dialog input{width:100%}.select-search-results{display:grid;gap:5px;max-height:45vh;overflow:auto;margin:12px 0}.select-search-results button{justify-content:flex-start;text-align:left}.select-search-results [aria-current=true]{outline:2px solid #b89b68}.finance-bars{display:grid;gap:10px}.finance-bars meter{width:100%}

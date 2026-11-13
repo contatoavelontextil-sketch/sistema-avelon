@@ -1,3 +1,4 @@
+import {textileCategories} from './finance-categories.js?v=20261111-v15a';
 export const STAGES=[['draft','Rascunho','#64748b'],['sent','Enviado','#3b82f6'],['awaiting_deposit','Aguardando entrada','#f59e0b'],['production','Em produção','#8b5cf6'],['cutting','Corte','#7c3aed'],['personalization','Personalização','#db2777'],['sewing','Costura','#2563eb'],['ready','Pedido pronto','#0891b2'],['awaiting_balance','Aguardando saldo','#d97706'],['completed','Finalizado','#16a34a'],['suspended','Suspenso','#64748b'],['cancelled','Cancelado','#dc2626']].map(([key,label,color])=>({key,label,color,enabled:true}));
 export const CLASSES={revenue:'Receita operacional',cost:'Custo de produção',expense:'Despesa operacional',tax:'Impostos / taxas',asset:'Aquisição de ativo',equity:'Movimentação de sócio / capital',transfer:'Transferência entre contas',other:'Outros / a classificar'};
 export const DEFAULTS={
@@ -10,7 +11,7 @@ export const DEFAULTS={
 export const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
 export const cents=n=>Math.round((Number(n)+Number.EPSILON)*100);
 export const round=n=>cents(n)/100;
-export function configSection(settings,key){return {...DEFAULTS[key],...(settings?.[key]||{})}}
+export function configSection(settings,key){const section={...DEFAULTS[key],...(settings?.[key]||{})};if(key==='finance'&&!Array.isArray(settings?.finance?.categories))section.categories=[...new Set([...section.categories,...Object.values(textileCategories).flat()])];return section}
 export function paidFor(entry,settlements){return round(settlements.filter(s=>s.entry_id===entry.id&&!s.reversed).reduce((n,s)=>n+Number(s.amount),0))}
 export function outstanding(entry,settlements){return entry.voided?0:Math.max(0,round(Number(entry.amount)-paidFor(entry,settlements)))}
 export function ledgerBalance(account,entries,settlements,until='9999-12-31') {if(until<account.opening_date)return 0;return round(Number(account.opening_balance)+settlements.filter(s=>s.account_id===account.id&&!s.reversed&&s.paid_on>=account.opening_date&&s.paid_on<=until).reduce((n,s)=>{const e=entries.find(e=>e.id===s.entry_id);return n+(e?.kind==='income'?1:-1)*Number(s.amount)},0))}
