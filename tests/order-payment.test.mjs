@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {orderPaymentPlan,paymentConfirmation} from '../dist/js/core/order-payment.js';
+import {saveOrderTransition} from '../dist/js/core/order-actions.js';
+
+const quote={id:'q',stage:'sent',total:200,entry_percentage:50,production:{}};
+function ctx(paid=0,receipts=[]){return {settings:{},can:()=>true,orderFinance:[{quote_id:'q',paid}],paymentReceipts:receipts,calls:[],async rpc(name,body){this.calls.push({name,body});return 'receipt'}}}
+const values={received:'yes',amount:100,account:'bank',paid_on:'2026-11-23',method:'Pix'};
+test('entrada não recebida abre confirmação, sem gravar ao escolher a etapa',async()=>{const c=ctx();const result=await saveOrderTransition(c,quote,{p_stage:'production'},'r');assert.equal(result.payment.newAmount,100);assert.equal(c.calls.length,0)});
+test('entrada parcial pede somente o valor ainda faltante',()=>{const plan=orderPaymentPlan(ctx(40),quote,'cutting');assert.equal(plan.newAmount,60);assert.equal(plan.available,40);assert.equal(plan.balance,160)});
+test('entrada acordada substitui percentual sem alterar automaticamente as parcelas',()=>{assert.equal(orderPaymentPlan(ctx(20),{...quote,production:{agreed_entry_amount:80}},'sewing').newAmount,60)});
+test('entrada documentada não volta a pedir recebimento a cada departamento',()=>{const c=ctx(100,[{quote_id:'q',kind:'payment',amount:100}]);for(const stage of ['production','cutting','personalization','sewing'])assert.equal(orderPaymentPlan(c,{...quote,stage:'production'},stage),null)});
+test('recibo estornado não consome o recebimento disponível',()=>{const plan=orderPaymentPlan(ctx(100,[{quote_id:'q',kind:'payment',amount:100,reversed:true}]),quote,'production');assert.equal(plan.available,100);assert.equal(plan.newAmount,0)});
+test('recibo final não é somado como adiantamento',()=>{assert.equal(orderPaymentPlan(ctx(100,[{quote_id:'q',kind:'final',amount:100}]),quote,'production').available,100)});
+test('pronto, aguardando saldo e finalizado sugerem somente o saldo restante',()=>{for(const stage of ['ready','awaiting_balance','completed']){const plan=orderPaymentPlan(ctx(100),{...quote,stage:'sewing'},stage);assert.equal(plan.newAmount,100);assert.equal(plan.isBalance,true)}});
+test('cancelamento, suspensão e edição na mesma etapa não perguntam sobre pagamentos',()=>{for(const stage of ['sent','draft','cancelled','suspended'])assert.equal(orderPaymentPlan(ctx(),quote,stage),null)});
+test('finalização com pendência usa janela, com quitação usa RPC final existente',async()=>{const due=ctx(100);assert.equal((await saveOrderTransition(due,quote,{p_stage:'completed'},'r')).payment.final,true);assert.equal(due.calls.length,0);const paid=ctx(200);assert.equal((await saveOrderTransition(paid,quote,{p_stage:'completed'},'r')).receipt,'receipt');assert.equal(paid.calls[0].name,'complete_order_with_receipt')});
+test('confirmar pagamento exige conta, data válida, forma e valor até o saldo',()=>{const p=orderPaymentPlan(ctx(),quote,'production');assert.equal(paymentConfirmation(p,values).p_amount,100);for(const patch of [{account:''},{paid_on:'2026-02-31'},{method:''},{amount:201},{amount:0},{amount:1.111},{received:''}])assert.throws(()=>paymentConfirmation(p,{...values,...patch}))});
+test('a resposta não não registra valor nem conta',()=>{const p=orderPaymentPlan(ctx(),quote,'production'),v=paymentConfirmation(p,{...values,received:'no'});assert.equal(v.p_amount,0);assert.equal(v.p_received,false);assert.equal(v.p_account,null)});
+test('quitação não pode ser confirmada com pagamento parcial ou resposta não',()=>{const p=orderPaymentPlan(ctx(100),quote,'completed');assert.throws(()=>paymentConfirmation(p,{...values,received:'no'}),/quitação/);assert.throws(()=>paymentConfirmation(p,{...values,amount:50}),/quitação/);assert.equal(paymentConfirmation(p,values).p_amount,100)});
+test('configuração desativa pergunta opcional sem desativar a quitação nem recibo manual',()=>{const c=ctx();c.settings={budget:{receipt_auto_on_production:false}};assert.equal(orderPaymentPlan(c,quote,'production'),null);assert.ok(orderPaymentPlan(c,quote,'completed'));assert.ok(orderPaymentPlan(c,quote,'production',{manual:true}))});

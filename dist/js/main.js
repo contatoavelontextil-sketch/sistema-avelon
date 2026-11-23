@@ -1,4 +1,5 @@
 import {install as installFinanceAnalysis} from './modules/finance-analysis.js?v=20261111-v15a';
+import {install as installOrderPayment} from './modules/order-payment.js?v=20261111-v15a';
 import {installSelectSearch} from './core/select-search.js?v=20261111-v15a';
 import {install as installAssets} from './modules/assets.js?v=20261111-v15a';
 import {install as installStorageManager} from './modules/storage-manager.js?v=20261111-v15a';
@@ -42,6 +43,7 @@ install8(ctx);
 installDocumentPDF(ctx);
 installQuickRecords(ctx);
 installReceipts(ctx);
+installOrderPayment(ctx);
 installWorkflow(ctx);
 installFinance(ctx); installFinanceAnalysis(ctx);
 installBank(ctx);

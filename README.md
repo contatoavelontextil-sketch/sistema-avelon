@@ -51,3 +51,8 @@ O texto e a apresentação do recibo são configurados em **Configurações → 
 
 ### Compartilhar documentos em PDF
 Orçamentos, recibos de adiantamento e recibos finais possuem Compartilhar PDF. O arquivo é gerado no aparelho com html2pdf.js 0.14.0 (MIT, cópia local em dist/vendor), após conferir a permissão de exportação no banco. Quando pronto, um segundo toque abre o compartilhamento nativo de arquivos (WhatsApp, e-mail e aplicativos oferecidos pelo sistema). O segundo toque preserva a ativação exigida pelo navegador. Sem suporte, Baixar PDF permite anexar manualmente. Nenhum envio é automático. A análise interna de custos e margens fica fora do arquivo; observações, assinatura e avisos de estorno/cancelamento fazem parte do documento.
+
+## Confirmação integrada de recebimento
+Ao mudar para produção, corte, personalização, costura, pedido pronto ou aguardando saldo, o sistema pode perguntar se o cliente já pagou. Entrada já documentada não gera uma nova cobrança nas trocas de departamento. A janela confirma valor efetivamente recebido, data, conta e forma, gera parcelas faltantes, registra a baixa e emite o recibo na mesma transação. Finalização com saldo exige confirmação integral e gera o recibo final consolidado. Responder que ainda não recebeu não cria baixa. O salto direto da produção para finalizado permanece permitido, respeitando a quitação.
+
+A migração `028_order_payment_confirmation.sql` deve estar aplicada antes de publicar essa interface. A função usa permissões existentes, trava do pedido, token de confirmação e diário privado para não repetir a mesma operação. Os testes `order-payment.test.mjs` e `order-payment-rollback.sql` cobrem esse fluxo; o SQL termina em rollback e não deixa registros de teste.
